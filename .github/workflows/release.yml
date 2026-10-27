@@ -1,0 +1,138 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: macOS universal
+            os: macos-15
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+            args: --target universal-apple-darwin --bundles dmg
+          - name: Windows x64
+            os: windows-latest
+            rust-targets: ""
+            args: --bundles nsis
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check that the tag matches the app version
+        run: |
+          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match app version $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install the Tauri CLI
+        run: npm ci
+
+      - name: Test
+        working-directory: src-tauri
+        run: cargo test --release
+
+      - name: Build
+        run: npx tauri build ${{ matrix.args }}
+
+      # Builds are not code-signed yet; the release notes explain how to open them.
+      - name: Collect
+        run: |
+          mkdir -p dist
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg "dist/LUFSy-$VERSION-macOS-universal.dmg"
+          else
+            cp src-tauri/target/release/bundle/nsis/*-setup.exe "dist/LUFSy-$VERSION-Windows-x64-setup.exe"
+          fi
+          ls -l dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ runner.os }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Write release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          awk -v version="$version" '
+            $0 ~ "^## " version " " { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          cat >> notes.md <<NOTES
+
+          ### Download
+
+          | System | File |
+          | --- | --- |
+          | macOS 11 or newer (Apple Silicon and Intel) | \`LUFSy-$version-macOS-universal.dmg\` |
+          | Windows 10/11, 64-bit | \`LUFSy-$version-Windows-x64-setup.exe\` |
+
+          Verify downloads against \`SHA256SUMS.txt\`.
+
+          These builds are not code-signed. On macOS, if the app is reported as damaged,
+          run \`xattr -dr com.apple.quarantine /Applications/LUFSy.app\` once. On Windows,
+          choose *More info* → *Run anyway* in the SmartScreen dialog.
+          NOTES
+          cat notes.md
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A re-pushed tag refreshes the existing release instead of failing.
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+            gh release edit "$GITHUB_REF_NAME" --title "LUFSy $VERSION" --notes-file notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* \
+              --title "LUFSy $VERSION" --notes-file notes.md --verify-tag
+          fi

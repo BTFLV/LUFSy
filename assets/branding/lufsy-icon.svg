@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#121315"/>
+  <g fill="#FFE500">
+    <rect x="120" y="120" width="120" height="16"/><rect x="120" y="120" width="16" height="120"/>
+    <rect x="784" y="120" width="120" height="16"/><rect x="888" y="120" width="16" height="120"/>
+    <rect x="120" y="888" width="120" height="16"/><rect x="120" y="784" width="16" height="120"/>
+    <rect x="784" y="888" width="120" height="16"/><rect x="888" y="784" width="16" height="120"/>
+  </g>
+  <!-- before: uneven levels (steel), after: levelled (white) -->
+  <g fill="#5C5F66">
+    <rect x="232" y="560" width="56" height="224"/>
+    <rect x="312" y="392" width="56" height="392"/>
+  </g>
+  <g fill="#FFFFFF">
+    <rect x="432" y="448" width="56" height="336"/>
+    <rect x="512" y="448" width="56" height="336"/>
+    <rect x="592" y="448" width="56" height="336"/>
+    <rect x="672" y="448" width="56" height="336"/>
+    <rect x="752" y="448" width="56" height="336"/>
+  </g>
+  <rect x="216" y="408" width="608" height="16" fill="#FFE500"/>
+  <rect x="216" y="800" width="608" height="8" fill="#2B2D31"/>
+</svg>

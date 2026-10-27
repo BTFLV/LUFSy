@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUFSy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="word">LUFS<b>y</b></span>
+    <span class="sq-label">subqix<i>/</i>lab</span>
+  </div>
+  <div class="file" id="fileBar" hidden>
+    <span class="sq-dot"></span>
+    <span class="file-name" id="fileName"></span>
+    <span class="sq-tag" id="fileCodec"></span>
+    <span class="sq-tag" id="fileRate"></span>
+    <span class="sq-tag" id="fileDur"></span>
+  </div>
+  <button class="sq-btn sq-btn--ghost" id="openBtn">Set öffnen</button>
+</header>
+
+<!-- Empty state -->
+<main class="empty" id="empty">
+  <div class="hero">
+    <p class="sq-label sq-label--yellow">Loudness-Tool für DJ-Sets</p>
+    <h1 class="sq-display">Set <span class="sq-accent">rein.</span><span class="sq-cursor" aria-hidden="true"></span></h1>
+    <p class="lead">LUFSy gleicht die Lautstärke deines aufgenommenen Sets an. Zu leise Tracks rauf, zu laute runter, Breakdowns bleiben Breakdowns. Dazu schneiden, faden, exportieren.</p>
+
+    <div class="drop sq-marks" id="drop">
+      <div>
+        <p class="drop-title">Datei hier ablegen</p>
+        <p class="sq-label">WAV · AIFF · FLAC · MP3 · M4A · OGG</p>
+      </div>
+      <button class="sq-btn" id="pickBtn">Datei wählen</button>
+    </div>
+
+    <div class="principles">
+      <div><span class="num">01</span><h3>Kennt das ganze Set</h3><p>Kein Echtzeit-Rider, der hinterherläuft. LUFSy greift genau da ein, wo der Mix den Pegel ändert.</p></div>
+      <div><span class="num">02</span><h3>Misst wie der Standard</h3><p>Lautheit nach ITU-R BS.1770 in LUFS. Der Export wird mit True Peak nachgemessen.</p></div>
+      <div><span class="num">03</span><h3>Fasst nichts an</h3><p>Dein Original bleibt, wie es ist. Raus kommt eine neue Datei als WAV oder MP3 320.</p></div>
+    </div>
+  </div>
+  <img class="mascot" src="img/nugqix-dj.webp" alt="nugQIX am DJ-Controller" width="360" height="357">
+</main>
+
+<!-- Editor -->
+<main class="work" id="work" hidden>
+  <section class="stage">
+    <div class="tl-wrap sq-marks" id="tlWrap">
+      <canvas id="tlBase"></canvas>
+      <canvas id="tlOver"></canvas>
+      <div class="tl-tip" id="tlTip" hidden></div>
+    </div>
+
+    <div class="transport">
+      <button class="icon-btn" id="playBtn" title="Abspielen (Leertaste)" aria-label="Abspielen">
+        <svg viewBox="0 0 16 16" class="i-play"><path d="M4 2.5v11l9-5.5z"/></svg>
+        <svg viewBox="0 0 16 16" class="i-pause"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/></svg>
+      </button>
+      <div class="seg" id="abSeg" role="group" aria-label="Vorschau">
+        <button data-v="orig">Original</button>
+        <button data-v="proc" class="on">LUFSy</button>
+      </div>
+      <span class="clock"><b id="clockNow">0:00.0</b><span> / </span><span id="clockDur">0:00</span></span>
+      <span class="spacer"></span>
+      <span class="hint sq-label">Scrollen zoomt · Shift scrollt</span>
+      <button class="sq-btn sq-btn--ghost sm" id="zoomAll">Alles</button>
+    </div>
+
+    <div class="cut">
+      <div class="cut-field">
+        <label class="sq-label" for="inStart">Start</label>
+        <input id="inStart" class="time" spellcheck="false">
+        <button class="sq-btn sq-btn--ghost sm sq-ico" id="setStart" title="Start auf Abspielposition setzen (I)" aria-label="Start auf Abspielposition"><svg viewBox="0 0 16 16"><path d="M7 2h2v7.6l2.3-2.3 1.4 1.4L8 13.4 3.3 8.7l1.4-1.4L7 9.6zM2 14h12v1.5H2z"/></svg></button>
+      </div>
+      <div class="cut-field">
+        <label class="sq-label" for="inEnd">Ende</label>
+        <input id="inEnd" class="time" spellcheck="false">
+        <button class="sq-btn sq-btn--ghost sm sq-ico" id="setEnd" title="Ende auf Abspielposition setzen (O)" aria-label="Ende auf Abspielposition"><svg viewBox="0 0 16 16"><path d="M7 2h2v7.6l2.3-2.3 1.4 1.4L8 13.4 3.3 8.7l1.4-1.4L7 9.6zM2 14h12v1.5H2z"/></svg></button>
+      </div>
+      <div class="cut-field">
+        <span class="sq-label">Länge</span>
+        <span class="time-out" id="cutLen">0:00</span>
+      </div>
+      <span class="spacer"></span>
+      <button class="sq-btn sq-btn--ghost sm" id="trimSilence">Stille kappen</button>
+      <button class="sq-btn sq-btn--ghost sm" id="resetCut">Zurücksetzen</button>
+    </div>
+
+    <div class="result-grid">
+      <div class="big sq-chamfer">
+        <p class="sq-label">Spreizung zwischen den Tracks</p>
+        <p class="big-val"><span id="spreadBefore">–</span><span class="arrow">→</span><b id="spreadAfter">–</b><small>LU</small></p>
+        <p class="sq-muted small">Abstand zwischen lauten und leisen Passagen im Set (P10 bis P90 der lokalen Lautheit).</p>
+      </div>
+      <dl class="sheet">
+        <dt>Lautheit</dt><dd><span id="lufsBefore">–</span> → <b id="lufsAfter">–</b> LUFS</dd>
+        <dt>Set-Mittel</dt><dd><span id="refLufs">–</span> LUFS</dd>
+        <dt>Anhebung</dt><dd>bis <span id="boostUsed">–</span> dB</dd>
+        <dt>Absenkung</dt><dd>bis <span id="cutUsed">–</span> dB</dd>
+        <dt>Limiter</dt><dd id="limInfo">–</dd>
+      </dl>
+    </div>
+  </section>
+
+  <aside class="panel" id="panel">
+    <section>
+      <p class="sq-label">01 <i>/</i> Ziel</p>
+      <div class="seg full" id="targetSeg">
+        <button data-v="auto" class="on">Set-Mittel halten</button>
+        <button data-v="fixed">Eigenes Ziel</button>
+      </div>
+      <div class="ctl" data-k="target" data-min="-20" data-max="-5" data-step="0.5" data-unit="LUFS" data-dec="1"></div>
+      <p class="note" id="targetNote"></p>
+    </section>
+
+    <section>
+      <p class="sq-label">02 <i>/</i> Ausgleich</p>
+      <div class="ctl" data-k="strength" data-label="Stärke" data-min="0" data-max="100" data-step="5" data-unit="%" data-dec="0"></div>
+      <div class="ctl" data-k="window" data-label="Fenster" data-min="10" data-max="120" data-step="5" data-unit="s" data-dec="0"
+           data-hint="Wie viel Musik pro Messung zählt. Kurz greift schnell ein, lang gleicht nur ganze Tracks an."></div>
+      <div class="ctl" data-k="smooth" data-label="Glättung" data-min="0" data-max="30" data-step="1" data-unit="s" data-dec="0"
+           data-hint="Wie weich die Pegeländerung über die Zeit verteilt wird."></div>
+      <div class="ctl" data-k="boost" data-label="Max. Anhebung" data-min="0" data-max="12" data-step="0.5" data-unit="dB" data-dec="1"></div>
+      <div class="ctl" data-k="cut" data-label="Max. Absenkung" data-min="0" data-max="18" data-step="0.5" data-unit="dB" data-dec="1"></div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <p class="sq-label">03 <i>/</i> Limiter</p>
+        <button class="switch on" id="limSwitch" role="switch" aria-checked="true" aria-label="Limiter"><span></span></button>
+      </div>
+      <div class="ctl" data-k="ceiling" data-label="Ceiling" data-min="-3" data-max="0" data-step="0.1" data-unit="dB" data-dec="1"
+           data-hint="Lookahead-Limiter, fängt Spitzen ab, die durch das Anheben entstehen."></div>
+    </section>
+
+    <section>
+      <p class="sq-label">04 <i>/</i> Fades</p>
+      <div class="ctl" data-k="fadeIn" data-label="Fade-in" data-min="0" data-max="30" data-step="0.5" data-unit="s" data-dec="1"></div>
+      <div class="ctl" data-k="fadeOut" data-label="Fade-out" data-min="0" data-max="60" data-step="0.5" data-unit="s" data-dec="1"></div>
+      <div class="seg full" id="curveSeg">
+        <button data-v="linear">Linear</button>
+        <button data-v="smooth" class="on">Weich</button>
+        <button data-v="log">Log</button>
+      </div>
+    </section>
+
+    <section class="export">
+      <p class="sq-label">05 <i>/</i> Export</p>
+      <div class="seg full" id="formatSeg">
+        <button data-v="wav24" class="on">WAV 24</button>
+        <button data-v="wav16">WAV 16</button>
+        <button data-v="wav32f">WAV 32F</button>
+        <button data-v="mp3">MP3 320</button>
+      </div>
+      <button class="sq-btn wide" id="exportBtn">Exportieren</button>
+      <div class="report" id="report" hidden>
+        <p class="sq-label sq-label--yellow"><span class="sq-dot"></span> Exportiert</p>
+        <p class="report-file" id="repFile"></p>
+        <dl class="sheet">
+          <dt>Lautheit</dt><dd id="repLufs"></dd>
+          <dt>True Peak</dt><dd id="repTp"></dd>
+          <dt>LRA</dt><dd id="repLra"></dd>
+          <dt>Dauer</dt><dd id="repDur"></dd>
+        </dl>
+        <button class="sq-btn sq-btn--ghost sm" id="revealBtn">Im Ordner zeigen</button>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<div class="busy" id="busy" hidden>
+  <div class="busy-box sq-marks">
+    <p class="sq-label sq-label--yellow" id="busyLabel">Analysiere</p>
+    <p class="busy-pct"><span id="busyPct">0</span><small>%</small></p>
+    <div class="bar"><span id="busyBar"></span></div>
+    <p class="sq-muted small" id="busyFile"></p>
+    <button class="sq-btn sq-btn--ghost sm" id="cancelBtn">Abbrechen</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<div class="dropping" id="dropping" hidden><p class="sq-display">Loslassen<span class="sq-accent">.</span></p></div>
+
+<audio id="audio" preload="auto" crossorigin="anonymous"></audio>
+<script src="app.js"></script>
+</body>
+</html>

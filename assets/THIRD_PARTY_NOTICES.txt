@@ -1,0 +1,47 @@
+LUFSy uses independently licensed open-source components. The main ones are
+listed below; `cargo tree` in src-tauri shows the full dependency tree.
+
+Tauri
+=====
+https://tauri.app — MIT OR Apache-2.0.
+Copyright (c) 2017-2026 Tauri Programme within The Commons Conservancy.
+
+Symphonia
+=========
+https://github.com/pdeljanov/Symphonia — Mozilla Public License 2.0.
+Audio decoding (WAV, AIFF, FLAC, MP3, AAC, Vorbis). Source code of the exact
+version used is available from crates.io (symphonia 0.5).
+
+ebur128
+=======
+https://github.com/sdroege/ebur128 — MIT.
+Copyright (c) 2011 Jan Kokemüller, Copyright (c) 2020 Sebastian Dröge.
+
+hound
+=====
+https://github.com/ruuda/hound — Apache-2.0.
+Copyright 2015 Ruud van Asseldonk.
+
+LAME (via mp3lame-encoder / mp3lame-sys)
+========================================
+https://lame.sourceforge.io — GNU Library General Public License 2.0 or later.
+LAME is compiled from source and linked statically. As required by the LGPL,
+the complete source of LUFSy is available at https://github.com/BTFLV/LUFSy,
+so it can be rebuilt against a modified LAME. The LAME source is distributed
+with the mp3lame-sys crate on crates.io.
+mp3lame-encoder / mp3lame-sys: https://github.com/DoumanAsh/mp3lame-encoder — LGPL-3.0.
+
+Chakra Petch
+============
+Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch).
+SIL Open Font License 1.1, see src/fonts/OFL-ChakraPetch.txt.
+
+JetBrains Mono
+==============
+Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono).
+SIL Open Font License 1.1, see src/fonts/OFL-JetBrainsMono.txt.
+
+subqix and nugQIX
+=================
+The subqix name and logo and the nugQIX mascot (src/img/nugqix-dj.webp) belong
+to subqix (Philip Mohr, Finn Gründel) and are not covered by the MIT License.
