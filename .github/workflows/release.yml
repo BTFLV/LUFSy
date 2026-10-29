@@ -17,10 +17,10 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - name: macOS universal
+          - name: macOS arm64
             os: macos-15
-            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
-            args: --target universal-apple-darwin --bundles dmg
+            rust-targets: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin --bundles dmg
           - name: Windows x64
             os: windows-latest
             rust-targets: ""
@@ -70,7 +70,7 @@ jobs:
         run: |
           mkdir -p dist
           if [ "$RUNNER_OS" = "macOS" ]; then
-            cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg "dist/LUFSy-$VERSION-macOS-universal.dmg"
+            cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg "dist/LUFSy-$VERSION-macOS-arm64.dmg"
           else
             cp src-tauri/target/release/bundle/nsis/*-setup.exe "dist/LUFSy-$VERSION-Windows-x64-setup.exe"
           fi
@@ -113,7 +113,7 @@ jobs:
 
           | System | File |
           | --- | --- |
-          | macOS 11 or newer (Apple Silicon and Intel) | \`LUFSy-$version-macOS-universal.dmg\` |
+          | Apple Silicon (arm64), macOS 11 or newer | \`LUFSy-$version-macOS-arm64.dmg\` |
           | Windows 10/11, 64-bit | \`LUFSy-$version-Windows-x64-setup.exe\` |
 
           Verify downloads against \`SHA256SUMS.txt\`.

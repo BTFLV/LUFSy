@@ -49,7 +49,7 @@ Get the latest build from
 
 | System | File |
 | --- | --- |
-| macOS 11 or newer, Apple Silicon and Intel | `LUFSy-<version>-macOS-universal.dmg` |
+| Apple Silicon (arm64), macOS 11 or newer | `LUFSy-<version>-macOS-arm64.dmg` |
 | Windows 10/11, 64-bit | `LUFSy-<version>-Windows-x64-setup.exe` |
 
 The builds are not signed yet, so both systems will ask once:
@@ -171,7 +171,7 @@ macOS and Windows for every push.
 ## Releases
 
 Pushing a tag `vX.Y.Z` that matches the version in `src-tauri/tauri.conf.json`
-builds the macOS universal disk image and the Windows installer and publishes a
+builds the macOS disk image for Apple Silicon (arm64) and the Windows installer and publishes a
 GitHub release with notes from [CHANGELOG.md](CHANGELOG.md) and a
 `SHA256SUMS.txt`. Builds are currently not code-signed.
 
