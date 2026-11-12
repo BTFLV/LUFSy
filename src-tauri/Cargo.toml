@@ -1,6 +1,6 @@
 [package]
 name = "lufsy"
-version = "0.1.0"
+version = "0.1.1"
 description = "LUFSy – gleicht die Lautstärke aufgenommener DJ-Sets nachträglich an"
 authors = ["Philip Mohr"]
 license = "MIT"

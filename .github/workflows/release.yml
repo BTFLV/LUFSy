@@ -62,10 +62,38 @@ jobs:
         working-directory: src-tauri
         run: cargo test --release
 
-      - name: Build
-        run: npx tauri build ${{ matrix.args }}
+      # The macOS app is signed with a Developer ID and notarized by the Tauri
+      # bundler; the disk image is then notarized on its own. The Windows
+      # installer is not code-signed.
+      - name: Configure macOS signing
+        if: runner.os == 'macOS'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY \
+                      APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret $name is not set; macOS releases must be signed and notarized."
+              exit 1
+            fi
+          done
+          {
+            echo "APPLE_CERTIFICATE=$APPLE_CERTIFICATE"
+            echo "APPLE_CERTIFICATE_PASSWORD=$APPLE_CERTIFICATE_PASSWORD"
+            echo "APPLE_SIGNING_IDENTITY=$APPLE_SIGNING_IDENTITY"
+            echo "APPLE_ID=$APPLE_ID"
+            echo "APPLE_PASSWORD=$APPLE_PASSWORD"
+            echo "APPLE_TEAM_ID=$APPLE_TEAM_ID"
+          } >> "$GITHUB_ENV"
 
-      # Builds are not code-signed yet; the release notes explain how to open them.
+      - name: Build
+        run: npx tauri build ${{ matrix.args }} --ci
+
       - name: Collect
         run: |
           mkdir -p dist
@@ -75,6 +103,27 @@ jobs:
             cp src-tauri/target/release/bundle/nsis/*-setup.exe "dist/LUFSy-$VERSION-Windows-x64-setup.exe"
           fi
           ls -l dist
+
+      - name: Notarize the disk image
+        if: runner.os == 'macOS'
+        run: |
+          dmg="dist/LUFSy-$VERSION-macOS-arm64.dmg"
+          codesign --force --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$dmg"
+          xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" --wait --timeout 30m
+          xcrun stapler staple "$dmg"
+
+      - name: Verify signature and notarization
+        if: runner.os == 'macOS'
+        run: |
+          app=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/macos -maxdepth 1 -name '*.app' | head -1)
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign -dv "$app" 2>&1 | grep -E 'Authority=Developer ID Application|flags=.*runtime'
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose=4 "$app"
+          dmg="dist/LUFSy-$VERSION-macOS-arm64.dmg"
+          xcrun stapler validate "$dmg"
+          spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -118,9 +167,9 @@ jobs:
 
           Verify downloads against \`SHA256SUMS.txt\`.
 
-          These builds are not code-signed. On macOS, if the app is reported as damaged,
-          run \`xattr -dr com.apple.quarantine /Applications/LUFSy.app\` once. On Windows,
-          choose *More info* → *Run anyway* in the SmartScreen dialog.
+          The macOS app and disk image are signed with a Developer ID and notarized by Apple.
+          The Windows installer is not code-signed; choose *More info* → *Run anyway* in the
+          SmartScreen dialog.
           NOTES
           cat notes.md
 

@@ -52,13 +52,10 @@ Get the latest build from
 | Apple Silicon (arm64), macOS 11 or newer | `LUFSy-<version>-macOS-arm64.dmg` |
 | Windows 10/11, 64-bit | `LUFSy-<version>-Windows-x64-setup.exe` |
 
-The builds are not signed yet, so both systems will ask once:
-
-- **macOS:** drag LUFSy to Applications. If macOS says the app is damaged or
-  cannot be checked, run `xattr -dr com.apple.quarantine /Applications/LUFSy.app`
-  once, or allow it under System Settings → Privacy & Security.
-- **Windows:** SmartScreen may show "Windows protected your PC". Click
-  *More info* → *Run anyway*.
+- **macOS:** open the disk image and drag LUFSy to Applications. The app and
+  the disk image are signed with a Developer ID and notarized by Apple.
+- **Windows:** the installer is not code-signed yet, so SmartScreen may show
+  "Windows protected your PC". Click *More info* → *Run anyway*.
 
 LUFSy reads WAV, AIFF, FLAC, MP3, M4A/AAC and Ogg Vorbis and writes WAV
 (16-bit with TPDF dither, 24-bit, 32-bit float) or MP3 320 kbit/s. The
@@ -173,7 +170,11 @@ macOS and Windows for every push.
 Pushing a tag `vX.Y.Z` that matches the version in `src-tauri/tauri.conf.json`
 builds the macOS disk image for Apple Silicon (arm64) and the Windows installer and publishes a
 GitHub release with notes from [CHANGELOG.md](CHANGELOG.md) and a
-`SHA256SUMS.txt`. Builds are currently not code-signed.
+`SHA256SUMS.txt`. The macOS app and disk image are signed with a Developer ID
+and notarized; the workflow reads the certificate (`APPLE_CERTIFICATE`,
+`APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`) and the notarization
+credentials (`APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`) from repository
+secrets. The Windows installer is not code-signed.
 
 ## License
 

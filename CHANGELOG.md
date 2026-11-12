@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — 2026-11-12
+
+### Project
+- macOS builds are signed with a Developer ID and notarized by Apple, so they
+  open without Gatekeeper warnings. The disk image is notarized as well.
+- macOS builds target Apple Silicon (arm64) only.
+
 ## 0.1.0 — 2026-10-27
 
 First public release.
@@ -29,6 +36,6 @@ First public release.
   peak and loudness range.
 
 ### Project
-- macOS (universal) and Windows (x64) builds from GitHub Actions, not yet
+- macOS and Windows (x64) builds from GitHub Actions, not yet
   code-signed.
 - MIT license.
