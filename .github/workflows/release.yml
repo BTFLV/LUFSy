@@ -129,14 +129,18 @@ jobs:
       - name: Verify signature and notarization
         if: runner.os == 'macOS'
         run: |
-          app=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/macos -maxdepth 1 -name '*.app' | head -1)
+          dmg="dist/LUFSy-$VERSION-macOS-arm64.dmg"
+          xcrun stapler validate "$dmg"
+          spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg"
+          # Check the app exactly as users get it: from inside the disk image.
+          mount="$RUNNER_TEMP/dmg"
+          hdiutil attach "$dmg" -nobrowse -readonly -mountpoint "$mount" > /dev/null
+          trap 'hdiutil detach "$mount" -quiet' EXIT
+          app="$mount/LUFSy.app"
           codesign --verify --deep --strict --verbose=2 "$app"
           codesign -dv "$app" 2>&1 | grep -E 'Authority=Developer ID Application|flags=.*runtime'
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose=4 "$app"
-          dmg="dist/LUFSy-$VERSION-macOS-arm64.dmg"
-          xcrun stapler validate "$dmg"
-          spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg"
 
       - name: Remove signing keychain
         if: always() && runner.os == 'macOS'
